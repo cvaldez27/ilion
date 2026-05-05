@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: ilion
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ilion_local
+    username: postgres
+    password: ${DB_LOCAL_PASSWORD}  
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+  thymeleaf:
+    cache: false
