@@ -1,0 +1,35 @@
+name: Deploy Ilion to Azure App Service
+
+on:
+  push:
+    branches:
+      - main  # Se activa cada vez que haces push a main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descargar el código del repo
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Configurar Java 17 (La misma versión de tu laptop)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      # 3. Compilar y empaquetar el JAR (Saltando tests por ahora)
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+      # 4. Desplegar el archivo JAR a Azure
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'ilion-app-cevaldez' # SUSTITUYE esto por el nombre de tu App Service en Azure
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: target/*.jar
