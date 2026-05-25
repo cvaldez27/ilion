@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/ilion_local
     username: postgres
-    password: ${DB_LOCAL_PASSWORD}  
+    password: ${DB_LOCAL_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -13,3 +13,7 @@ spring:
     show-sql: true
   thymeleaf:
     cache: false
+
+logging:
+  level:
+    org.springframework.security: DEBUG

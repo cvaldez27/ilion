@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ILION - Register</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="container">
+    <h1 class="logo">ÍLION</h1>
+
+    <form th:action="@{/register}" method="post">
+        <div class="field">
+            <label>Name</label>
+            <input type="text" name="name" placeholder="Enter your name" required>
+        </div>
+
+        <div class="field">
+            <label>Last name</label>
+            <input type="text" name="lastName" placeholder="Enter your last name" required>
+        </div>
+
+        <div class="field">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="Enter your email address" required>
+        </div>
+
+        <div class="field">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Enter your password" required>
+        </div>
+
+        <div class="field">
+            <label>Choose your role</label>
+            <div class="role-options">
+                <label>
+                    <input type="radio" name="role" value="DOCTOR" checked>
+                    <span class="role-icon">⚕️</span> Doctor
+                </label>
+                <label>
+                    <input type="radio" name="role" value="PATIENT">
+                    <span class="role-icon">👨‍⚕️</span> Patient
+                </label>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-register">Create account</button>
+    </form>
+</div>
+</body>
+</html>

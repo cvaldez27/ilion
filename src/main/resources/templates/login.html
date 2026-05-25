@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ILION - Login</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="container">
+    <h1 class="logo">ÍLION</h1>
+
+    <form th:action="@{/login}" method="post">
+        <div class="field">
+            <label>Email Address</label>
+            <input type="email" name="username" placeholder="Enter your email address" required>
+        </div>
+
+        <div class="field">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Enter your password" required>
+        </div>
+
+        <div class="actions">
+            <a href="#" th:onclick="|window.location.href='@{/register}'|">Create account here</a>
+        </div>
+
+        <button type="submit" class="btn-login">Login</button>
+    </form>
+</div>
+</body>
+</html>
