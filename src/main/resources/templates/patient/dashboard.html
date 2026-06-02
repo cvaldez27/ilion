@@ -1,111 +1,176 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <meta charset="UTF-8">
-    <title>ÍLION — Dashboard Paciente</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <style>
-        :root{
-            --purple-dark:#55649e; --purple:#787fb0;
-            --mint:#94c2b2; --light:#b2d9d7;
-            --bg:#ffffff; --pageBg:#f5f5f0;
-            --muted:#9a9dc4; --variante-muted:#bcbdd9; --w:#ffffff; --k:#000000;
-            --f:'Poppins','Inter',sans-serif;
-            --lift:-5px;
-            --ease:cubic-bezier(.34,1.56,.64,1);
-            --dur:220ms;
-        }
-        *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:var(--f);background:var(--bg);color:var(--k);min-height:100vh}
-        /* Navbar */
-        nav{height:40px;display:flex;align-items:flex-end;padding:0 4px;background:#bbb;gap:3px}
-        .tab{
-            padding:0 24px;height:36px;font-size:13px;font-family:var(--f);
-            cursor:pointer;border:none;border-radius:7px 7px 0 0;
-            display:flex;align-items:center;gap:5px;font-weight:400;
-            transform:translateY(0);will-change:transform;
-            transition:transform var(--dur) var(--ease), box-shadow var(--dur) ease;
-        }
-        .tab:hover{transform:translateY(var(--lift));box-shadow:0 4px 12px rgba(0,0,0,.13)}
-        .tab.active{transform:translateY(var(--lift));box-shadow:0 5px 14px rgba(0,0,0,.16);font-weight:600}
-        .t-home{background:var(--purple-dark);color:var(--w)}
-        .t-appt{background:var(--mint);color:var(--w)}
-        .t-med{background:var(--light);color:var(--w)}
-        .t-perf{background:var(--purple);color:var(--w)}
-        /* Page bar */
-        .pbar{background:var(--mint);padding:13px 26px;display:flex;align-items:center;justify-content:space-between}
-        .pbar h1{font-size:26px;font-weight:400;color:var(--w)}
-        .btn-out{background:var(--purple);border:none;color:var(--w);border-radius:20px;
-            padding:6px 16px;font-size:12px;font-family:var(--f);cursor:pointer;transition:background .2s}
-        .btn-out:hover{background:var(--purple-dark)}
-        /* Content */
-        .container{padding:28px 26px}
-        .apill{display:inline-block;background:var(--light);color:var(--w);
-            font-size:13px;padding:9px 22px;border-radius:20px;margin-bottom:16px}
-        .atable{border-collapse:collapse;font-size:12px;width:auto;min-width:380px}
-        .atable th{background:#e8e8e8;padding:8px 12px;font-weight:600;font-size:11.5px;
-            color:#444;text-align:left;border:1px solid #ccc}
-        .atable td{padding:8px 12px;border:1px solid #ddd;color:#333;
-            vertical-align:top;background:var(--w);height:52px}
-        .atable tr:hover td{background:#f9f9f9}
-        .sok{color:#4a8a6a;font-weight:600}
-        .spend{color:#b07830;font-weight:600}
-        .scancel{color:#c05621;font-weight:600}
-    </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>ÍLION — Dashboard Médico</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/doctor/css/dashboard.css}">
 </head>
 <body>
-    <!-- Navbar -->
-    <nav>
-        <div class="tab t-home active" data-sec="home">🏠 Home</div>
-        <div class="tab t-appt" data-sec="appointments">Appointments</div>
-        <div class="tab t-med" data-sec="medications">Medications</div>
-        <div class="tab t-perf" data-sec="profile">Profile</div>
-    </nav>
-    
-    <!-- Page bar -->
-    <div class="pbar">
-        <h1 th:text="'Welcome, ' + ${#strings.substringBefore(username, '@')}">Welcome, Patient</h1>
-        <button id="btnOut" class="btn-out">Log out</button>
-    </div>
-    
-    <!-- Main content -->
-    <div class="container">
-        <div class="hleft">
-            <div class="apill">My upcoming appointments</div>
-            <table class="atable">
-                <thead>
-                    <tr>
-                        <th>Hour</th>
-                        <th>Day</th>
-                        <th>Month</th>
-                        <th>Year</th>
-                        <th>Doctor</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:if="${appointments.empty}">
-                        <td colspan="6" class="no-appointments">No upcoming appointments</td>
-                    </tr>
-                    <tr th:each="appointment : ${appointments}">
-                        <td th:text="${#temporals.format(appointment.time, 'HH:mm')}">10:00</td>
-                        <td th:text="${#temporals.format(appointment.date, 'EEEE')}">Monday</td>
-                        <td th:text="${#temporals.format(appointment.date, 'MMMM')}">February</td>
-                        <td th:text="${#temporals.format(appointment.date, 'yyyy')}">2026</td>
-                        <td th:text="${appointment.doctor.name + ' ' + appointment.doctor.lastName}">Dr. Elida Ríos</td>
-                        <td th:class="${appointment.status == 'CONFIRMED' ? 'sok' : (appointment.status == 'PENDING' ? 'spend' : 'scancel')}"
-                            th:text="${appointment.statusLabel}">Confirmed</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
 
-    <script th:inline="javascript">
-        document.getElementById('btnOut').addEventListener('click', function() {
-            window.location.href = '/logout';
-        });
-    </script>
+<nav>
+  <button class="tab t-home active" data-sec="home">🏠 Home</button>
+  <button class="tab t-pat" data-sec="patients">
+    <a href="/doctor/patients" style="text-decoration:none;color:inherit">Patients</a>
+  </button>
+  <button class="tab t-arch" data-sec="archives">
+    <a href="/doctor/archives" style="text-decoration:none;color:inherit">Archives</a>
+  </button>
+  <button class="tab t-perf" data-sec="perfil">
+    <a href="/doctor/profile" style="text-decoration:none;color:inherit">Perfil</a>
+  </button>
+</nav>
+
+<div class="pbar">
+  <h1 id="pageTitle" th:text="'Welcome, ' + ${#strings.substringBefore(username, '@')}">Welcome, Doctor</h1>
+  <button class="btn-out" id="btnOut" onclick="window.location.href='/logout'">💨 Log out</button>
+</div>
+
+<!-- HOME -->
+<div id="sec-home" class="msec active">
+  <div class="hlayout">
+    <div class="hleft">
+      <div class="apill">Appointments for today</div>
+      <table class="atable">
+        <thead>
+          <tr>
+            <th>Hour</th>
+            <th>Day</th>
+            <th>Month</th>
+            <th>Year</th>
+            <th>Patient</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${appointmentsToday.empty}">
+            <td colspan="6" class="no-appointments">No appointments for today</td>
+          </tr>
+          <tr th:each="appointment : ${appointmentsToday}">
+            <td th:text="${#temporals.format(appointment.time, 'HH:mm')}">10:00</td>
+            <td th:text="${#temporals.format(appointment.date, 'EEEE')}">Monday</td>
+            <td th:text="${#temporals.format(appointment.date, 'MMMM')}">February</td>
+            <td th:text="${#temporals.format(appointment.date, 'yyyy')}">2026</td>
+            <td th:text="${appointment.patient.name + ' ' + appointment.patient.lastName}">Noah Reyes Calderón</td>
+            <td>
+              <span th:class="${appointment.status == 'CONFIRMED' ? 'sok' : (appointment.status == 'PENDING' ? 'spend' : 'scancel')}"
+                    th:text="${appointment.status}">Confirmed</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="hright">
+      <button class="abtn" id="btnLog">🗒️ Medical log</button>
+      <div class="sboard" id="sboard">
+        <table>
+          <thead>
+            <tr>
+              <th class="sok">Confirmed</th>
+              <th class="spend">Pending</th>
+              <th class="scancel">Canceled</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td th:text="${confirmedCount} ?: 0">0</td>
+              <td th:text="${pendingCount} ?: 0">0</td>
+              <td th:text="${canceledCount} ?: 0">0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="abtn" id="btnSched">📅 Schedule an appointment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule overlay + panel -->
+<div class="sp-overlay" id="spOv"></div>
+<div class="sp" id="sp">
+  <div class="sp-in">
+    <div class="sp-ctrls">
+      <button class="sp-x" id="spMin">—</button>
+      <button class="sp-x" id="spClose">✕</button>
+    </div>
+    <div class="sp-left" id="spLeft">
+      <div class="psearch-wrap">
+        <input class="psearch" id="psearch" type="text" placeholder="Find your patient">
+        <span style="color:rgba(255,255,255,.8)">🔍</span>
+      </div>
+      <div id="plist">
+        <div class="pitem" th:each="patient : ${allPatients}" 
+             th:text="${patient.name + ' ' + patient.lastName}" 
+             th:data-id="${patient.id}">Patient Name</div>
+      </div>
+    </div>
+    <div class="sp-summary" id="spSum">
+      <div>
+        <div class="sum-lbl">Your patient</div>
+        <div class="sum-val" id="spPatVal">—</div>
+      </div>
+      <div>
+        <div class="sum-lbl">Your date</div>
+        <div class="sum-val" id="spDateVal">—</div>
+      </div>
+      <div>
+        <div class="sum-lbl">Your Hour</div>
+        <div class="hour-row">
+          <input class="hour-inp" id="spHH" type="number" min="0" max="23" value="16">
+          <span class="hour-sep">:</span>
+          <input class="hour-inp" id="spMM" type="number" min="0" max="59" value="00">
+        </div>
+      </div>
+      <div>
+        <div class="sum-lbl">An optional description</div>
+        <textarea class="desc-ta" id="appointmentDescription" placeholder=""></textarea>
+      </div>
+    </div>
+    <div class="sp-right">
+      <div class="sp-datelbl">Select a date</div>
+      <div class="sp-monthlbl">
+        <button id="spPrev">&#8249;</button>
+        <span id="spMonth"></span>
+        <button id="spNext">&#8250;</button>
+      </div>
+      <table class="spcal" id="spCal">
+        <thead>
+          <tr>
+            <th>Lunes</th>
+            <th>Martes</th>
+            <th>Miércoles</th>
+            <th>Jueves</th>
+            <th>Viernes</th>
+            <th>Sábado</th>
+            <th>Domingo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Calendar will be populated by JS -->
+        </tbody>
+      </table>
+      <button class="btn-confirm" id="btnConfirm">✅ I confirm my appointment</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script th:src="@{/doctor/js/dashboard.js}"></script>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+  // Pass backend data to frontend
+  const backendData = {
+    allPatients: /*[[${allPatients}]]*/ [],
+    appointmentsToday: /*[[${appointmentsToday}]]*/ [],
+    confirmedCount: /*[[${confirmedCount}]]*/ 0,
+    pendingCount: /*[[${pendingCount}]]*/ 0,
+    canceledCount: /*[[${canceledCount}]]*/ 0
+  };
+/*]]>*/
+</script>
+
 </body>
-</html>
 </html>
