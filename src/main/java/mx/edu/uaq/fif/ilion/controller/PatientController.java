@@ -9,6 +9,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 
@@ -60,5 +62,47 @@ public class PatientController {
         model.addAttribute("username", userDetails.getUsername());
         model.addAttribute("patient", currentUser);
         return "patient/profile"; // A crear después
+    }
+
+    @PostMapping("/patient/appointment/{id}/confirm")
+    public String confirmAppointment(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        if (!appointment.getPatient().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("Unauthorized action");
+        }
+
+        appointment.setStatus(Appointment.AppointmentStatus.CONFIRMED);
+        appointmentRepository.save(appointment);
+
+        return "redirect:/patient/dashboard";
+    }
+
+    @PostMapping("/patient/appointment/{id}/cancel")
+    public String cancelAppointment(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        if (!appointment.getPatient().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("Unauthorized action");
+        }
+
+        appointment.setStatus(Appointment.AppointmentStatus.CANCELED);
+        appointmentRepository.save(appointment);
+
+        return "redirect:/patient/dashboard";
     }
 }
