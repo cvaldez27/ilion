@@ -150,9 +150,135 @@
      PROFILE
 ========================= -->
 <section id="sec-perfil" class="msec">
-    <div class="ph">
-        Profile section — Coming soon
+
+    <div class="patient-profile-layout">
+
+        <div class="patient-profile-sidebar">
+            <div class="patient-profile-title">Profile</div>
+
+            <button class="patient-profile-link active" data-patient-profile="patient-info">
+                Personal Information
+            </button>
+
+            <button class="patient-profile-link" data-patient-profile="patient-medical-history">
+                Medical History
+            </button>
+
+            <button class="patient-profile-link" data-patient-profile="patient-progress-notes">
+                Progress Notes
+            </button>
+        </div>
+
+        <div class="patient-profile-content">
+
+            <!-- PERSONAL INFORMATION -->
+            <div id="patient-info" class="patient-profile-sec active">
+
+                <div class="patient-card">
+
+                    <h2>Personal Information</h2>
+
+                    <div class="patient-info-grid">
+
+                        <div class="patient-info-field">
+                            <label>Name</label>
+                            <div th:text="${patient.name}">—</div>
+                        </div>
+
+                        <div class="patient-info-field">
+                            <label>Last name</label>
+                            <div th:text="${patient.lastName}">—</div>
+                        </div>
+
+                        <div class="patient-info-field">
+                            <label>Email</label>
+                            <div th:text="${patient.email}">—</div>
+                        </div>
+
+                        <div class="patient-info-field">
+                            <label>Phone</label>
+                            <div th:text="${patient.phone}">—</div>
+                        </div>
+
+                        <div class="patient-info-field">
+                            <label>Date of Birth</label>
+                            <div th:text="${patient.dateOfBirth}">—</div>
+                        </div>
+
+                        <div class="patient-info-field">
+                            <label>Blood Type</label>
+                            <div th:text="${patient.bloodType}">—</div>
+                        </div>
+
+                        <div class="patient-info-field full">
+                            <label>Allergies</label>
+                            <div th:text="${patient.allergies}">—</div>
+                        </div>
+
+                        <div class="patient-info-field full">
+                            <label>Chronic Conditions</label>
+                            <div th:text="${patient.chronicConditions}">—</div>
+                        </div>
+
+                        <div class="patient-info-field">
+                            <label>Family History</label>
+                            <div th:text="${patient.familyHistory}">—</div>
+                        </div>
+
+                        <div class="patient-info-field">
+                            <label>Cancer History</label>
+                            <div th:text="${patient.cancerHistory}">—</div>
+                        </div>
+
+                        <div class="patient-info-field full">
+                            <label>Genetic Disorders / Other</label>
+                            <div th:text="${patient.geneticDisorders}">—</div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- MEDICAL HISTORY -->
+            <div id="patient-medical-history" class="patient-profile-sec">
+
+                <div class="patient-card">
+
+                    <h2>Medical History</h2>
+
+                    <div id="patientPrescriptionsList">
+                        <div class="empty-state">
+                            Loading medical history...
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- PROGRESS NOTES -->
+            <div id="patient-progress-notes" class="patient-profile-sec">
+
+                <div class="patient-card">
+
+                    <h2>Progress Notes</h2>
+
+                    <div id="patientProgressNotesList">
+                        <div class="empty-state">
+                            Loading progress notes...
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
+
 </section>
 
 <!-- =========================

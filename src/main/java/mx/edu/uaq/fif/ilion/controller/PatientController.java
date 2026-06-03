@@ -20,9 +20,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import mx.edu.uaq.fif.ilion.entity.Appointment;
 import mx.edu.uaq.fif.ilion.entity.MedicalFile;
+import mx.edu.uaq.fif.ilion.entity.Prescription;
+import mx.edu.uaq.fif.ilion.entity.ProgressNote;
 import mx.edu.uaq.fif.ilion.entity.User;
 import mx.edu.uaq.fif.ilion.repository.AppointmentRepository;
 import mx.edu.uaq.fif.ilion.repository.MedicalFileRepository;
+import mx.edu.uaq.fif.ilion.repository.PrescriptionRepository;
+import mx.edu.uaq.fif.ilion.repository.ProgressNoteRepository;
 import mx.edu.uaq.fif.ilion.repository.UserRepository;
 
 @Controller
@@ -31,15 +35,21 @@ public class PatientController {
     private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
     private final MedicalFileRepository medicalFileRepository;
+    private final PrescriptionRepository prescriptionRepository;
+    private final ProgressNoteRepository progressNoteRepository;
 
     public PatientController(
             UserRepository userRepository,
             AppointmentRepository appointmentRepository,
-            MedicalFileRepository medicalFileRepository) {
+            MedicalFileRepository medicalFileRepository,
+            PrescriptionRepository prescriptionRepository,
+            ProgressNoteRepository progressNoteRepository) {
 
         this.userRepository = userRepository;
         this.appointmentRepository = appointmentRepository;
         this.medicalFileRepository = medicalFileRepository;
+        this.prescriptionRepository = prescriptionRepository;
+        this.progressNoteRepository = progressNoteRepository;
     }
 
     @GetMapping("/patient/dashboard")
@@ -164,5 +174,31 @@ public class PatientController {
                 )
                 .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
                 .body(resource);
+    }
+
+    @GetMapping("/patient/progress-notes")
+    @ResponseBody
+    public List<ProgressNote> getPatientProgressNotes(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User currentUser = userRepository
+                .findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return progressNoteRepository
+                .findByPatientOrderByDateDesc(currentUser);
+    }
+
+    @GetMapping("/patient/prescriptions")
+    @ResponseBody
+    public List<Prescription> getPatientPrescriptions(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User currentUser = userRepository
+                .findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return prescriptionRepository
+                .findByPatientOrderByDateDesc(currentUser);
     }
 }
