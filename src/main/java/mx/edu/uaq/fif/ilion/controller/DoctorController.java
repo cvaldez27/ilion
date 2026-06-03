@@ -9,12 +9,18 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import mx.edu.uaq.fif.ilion.entity.Appointment;
+import mx.edu.uaq.fif.ilion.entity.Prescription;
+import mx.edu.uaq.fif.ilion.entity.ProgressNote;
 import mx.edu.uaq.fif.ilion.entity.User;
 import mx.edu.uaq.fif.ilion.repository.AppointmentRepository;
+import mx.edu.uaq.fif.ilion.repository.PrescriptionRepository;
+import mx.edu.uaq.fif.ilion.repository.ProgressNoteRepository;
 import mx.edu.uaq.fif.ilion.repository.UserRepository;
 
 @Controller
@@ -22,45 +28,48 @@ public class DoctorController {
 
     private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
+    private final PrescriptionRepository prescriptionRepository;
+    private final ProgressNoteRepository progressNoteRepository;
 
-    public DoctorController(UserRepository userRepository, AppointmentRepository appointmentRepository) {
+    public DoctorController(
+            UserRepository userRepository,
+            AppointmentRepository appointmentRepository,
+            PrescriptionRepository prescriptionRepository,
+            ProgressNoteRepository progressNoteRepository) {
+
         this.userRepository = userRepository;
         this.appointmentRepository = appointmentRepository;
+        this.prescriptionRepository = prescriptionRepository;
+        this.progressNoteRepository = progressNoteRepository;
     }
 
     @GetMapping("/doctor/dashboard")
-    public String doctorDashboard(Model model, @AuthenticationPrincipal UserDetails userDetails) {
-        // Obtener el usuario actual (médico)
+    public String doctorDashboard(Model model,
+                                  @AuthenticationPrincipal UserDetails userDetails) {
+
         User currentUser = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Citas de hoy (tabla principal)
-List<Appointment> appointmentsToday =
-        appointmentRepository.findByDoctorAndDate(
-                currentUser,
-                LocalDate.now()
-        );
+        List<Appointment> appointmentsToday =
+                appointmentRepository.findByDoctorAndDate(currentUser, LocalDate.now());
 
-// Todas las citas (Medical Log)
-List<Appointment> allAppointments =
-        appointmentRepository.findByDoctor(currentUser);
+        List<Appointment> allAppointments =
+                appointmentRepository.findByDoctor(currentUser);
 
-long confirmedCount = allAppointments.stream()
-        .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CONFIRMED)
-        .count();
+        long confirmedCount = allAppointments.stream()
+                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CONFIRMED)
+                .count();
 
-long pendingCount = allAppointments.stream()
-        .filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING)
-        .count();
+        long pendingCount = allAppointments.stream()
+                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.PENDING)
+                .count();
 
-long canceledCount = allAppointments.stream()
-        .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CANCELED)
-        .count();
+        long canceledCount = allAppointments.stream()
+                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CANCELED)
+                .count();
 
-        // Cargar pacientes asignados al médico para el panel de scheduling
         List<User> patients = userRepository.findByRole(User.Role.PATIENT);
 
-        // Pasar datos al modelo - ⚠️ SIN ESPACIOS
         model.addAttribute("username", userDetails.getUsername());
         model.addAttribute("doctor", currentUser);
         model.addAttribute("appointmentsToday", appointmentsToday);
@@ -73,29 +82,24 @@ long canceledCount = allAppointments.stream()
     }
 
     @PostMapping("/doctor/schedule")
-public String scheduleAppointment(
-        @AuthenticationPrincipal UserDetails userDetails,
-        @RequestParam Long patientId,
-        @RequestParam String dateStr,
-        @RequestParam String timeStr,
-        @RequestParam(required = false) String description,
-        Model model) {
+    public String scheduleAppointment(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Long patientId,
+            @RequestParam String dateStr,
+            @RequestParam String timeStr,
+            @RequestParam(required = false) String description) {
 
         User doctor = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Doctor no encontrado"));
 
         User patient = userRepository.findById(patientId)
-        .orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
-
-        // Parsear fecha y hora
-        LocalDate date = LocalDate.parse(dateStr);
-        LocalTime time = LocalTime.parse(timeStr);
+                .orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
 
         Appointment appointment = new Appointment();
         appointment.setDoctor(doctor);
         appointment.setPatient(patient);
-        appointment.setDate(date);
-        appointment.setTime(time);
+        appointment.setDate(LocalDate.parse(dateStr));
+        appointment.setTime(LocalTime.parse(timeStr));
         appointment.setDescription(description != null ? description : "");
         appointment.setStatus(Appointment.AppointmentStatus.PENDING);
 
@@ -104,16 +108,124 @@ public String scheduleAppointment(
         return "redirect:/doctor/dashboard";
     }
 
+    @GetMapping("/doctor/patient/{id}")
+    @ResponseBody
+    public User getPatient(@PathVariable Long id) {
+        return getPatientOrThrow(id);
+    }
+
+    @PostMapping("/doctor/patient/{id}/update")
+    @ResponseBody
+    public User updatePatient(
+            @PathVariable Long id,
+            @RequestParam String name,
+            @RequestParam String lastName,
+            @RequestParam String email,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String dateOfBirth,
+            @RequestParam(required = false) String bloodType,
+            @RequestParam(required = false) String allergies,
+            @RequestParam(required = false) String chronicConditions,
+            @RequestParam(required = false) String familyHistory,
+            @RequestParam(required = false) String cancerHistory,
+            @RequestParam(required = false) String geneticDisorders) {
+
+        User patient = getPatientOrThrow(id);
+
+        patient.setName(name);
+        patient.setLastName(lastName);
+        patient.setEmail(email);
+        patient.setPhone(phone);
+        patient.setDateOfBirth(dateOfBirth);
+        patient.setBloodType(bloodType);
+        patient.setAllergies(allergies);
+        patient.setChronicConditions(chronicConditions);
+        patient.setFamilyHistory(familyHistory);
+        patient.setCancerHistory(cancerHistory);
+        patient.setGeneticDisorders(geneticDisorders);
+
+        return userRepository.save(patient);
+    }
+
+    @GetMapping("/doctor/patient/{id}/prescriptions")
+    @ResponseBody
+    public List<Prescription> getPatientPrescriptions(@PathVariable Long id) {
+        User patient = getPatientOrThrow(id);
+        return prescriptionRepository.findByPatientOrderByDateDesc(patient);
+    }
+
+    @PostMapping("/doctor/patient/{id}/prescription")
+    @ResponseBody
+    public Prescription createPrescription(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @RequestParam String diagnosis,
+            @RequestParam String medications,
+            @RequestParam String dosage,
+            @RequestParam String instructions,
+            @RequestParam(required = false) String notes) {
+
+        User doctor = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Doctor no encontrado"));
+
+        User patient = getPatientOrThrow(id);
+
+        Prescription prescription = new Prescription();
+        prescription.setDoctor(doctor);
+        prescription.setPatient(patient);
+        prescription.setDate(LocalDate.now());
+        prescription.setDiagnosis(diagnosis);
+        prescription.setMedications(medications);
+        prescription.setDosage(dosage);
+        prescription.setInstructions(instructions);
+        prescription.setNotes(notes != null ? notes : "");
+
+        return prescriptionRepository.save(prescription);
+    }
+
+    @GetMapping("/doctor/patient/{id}/progress-notes")
+    @ResponseBody
+    public List<ProgressNote> getPatientProgressNotes(@PathVariable Long id) {
+        User patient = getPatientOrThrow(id);
+        return progressNoteRepository.findByPatientOrderByDateDesc(patient);
+    }
+
+    @PostMapping("/doctor/patient/{id}/progress-note")
+    @ResponseBody
+    public ProgressNote createProgressNote(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @RequestParam String subjective,
+            @RequestParam String objective,
+            @RequestParam String assessment,
+            @RequestParam String plan) {
+
+        User doctor = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Doctor no encontrado"));
+
+        User patient = getPatientOrThrow(id);
+
+        ProgressNote note = new ProgressNote();
+        note.setDoctor(doctor);
+        note.setPatient(patient);
+        note.setDate(LocalDate.now());
+        note.setSubjective(subjective);
+        note.setObjective(objective);
+        note.setAssessment(assessment);
+        note.setPlan(plan);
+
+        return progressNoteRepository.save(note);
+    }
 
     @GetMapping("/doctor/patients")
-    public String doctorPatients(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+    public String doctorPatients(Model model,
+                                 @AuthenticationPrincipal UserDetails userDetails) {
+
         User currentUser = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Cargar pacientes asignados al médico
-        List<User> patients = userRepository.findByAssignedDoctor(currentUser);
+        List<User> patients = userRepository.findByRole(User.Role.PATIENT);
 
-        // ⚠️ SIN ESPACIOS
         model.addAttribute("username", userDetails.getUsername());
         model.addAttribute("doctor", currentUser);
         model.addAttribute("patients", patients);
@@ -122,14 +234,15 @@ public String scheduleAppointment(
     }
 
     @GetMapping("/doctor/archives")
-    public String doctorArchives(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+    public String doctorArchives(Model model,
+                                 @AuthenticationPrincipal UserDetails userDetails) {
+
         User currentUser = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Cargar todas las citas del médico (para historial)
-        List<Appointment> allAppointments = appointmentRepository.findByDoctor(currentUser);
+        List<Appointment> allAppointments =
+                appointmentRepository.findByDoctor(currentUser);
 
-        // ⚠️ SIN ESPACIOS
         model.addAttribute("username", userDetails.getUsername());
         model.addAttribute("doctor", currentUser);
         model.addAttribute("appointments", allAppointments);
@@ -138,14 +251,21 @@ public String scheduleAppointment(
     }
 
     @GetMapping("/doctor/profile")
-    public String doctorProfile(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+    public String doctorProfile(Model model,
+                                @AuthenticationPrincipal UserDetails userDetails) {
+
         User currentUser = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // ⚠️ SIN ESPACIOS
         model.addAttribute("username", userDetails.getUsername());
         model.addAttribute("doctor", currentUser);
 
         return "doctor/profile";
+    }
+
+    private User getPatientOrThrow(Long id) {
+        return userRepository.findById(id)
+                .filter(user -> user.getRole() == User.Role.PATIENT)
+                .orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
     }
 }

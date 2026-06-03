@@ -433,6 +433,377 @@ byId('btnConfirm')?.addEventListener('click', function () {
     byId('spMin')?.addEventListener('click', closeSp);
     byId('spOv')?.addEventListener('click', closeSp);
 
-    console.log('✅ dashboard.js cargado correctamente');
+    // --- Lógica para la sección de Pacientes ---
 
+let currentPatientId = null;
+
+function showPatientView(viewId, title) {
+    const patientViews = ['v-list', 'v-new', 'v-detail'];
+    patientViews.forEach(v => {
+        const el = byId(v);
+        if (el) el.style.display = 'none';
+    });
+
+    const targetView = byId(viewId);
+    if (targetView) targetView.style.display = 'block';
+
+    const titleEl = document.querySelector('#sec-patients #pageTitle');
+    if (titleEl) titleEl.textContent = title || 'Patients';
+}
+
+function setPersonalInfoReadonly(readonly) {
+    [
+        'pdName',
+        'pdLastName',
+        'pdEmail',
+        'pdPhone',
+        'pdDOB',
+        'pdBloodType',
+        'pdAllergies',
+        'pdChronicConditions',
+        'pdDiabetes',
+        'pdHypertension',
+        'pdCancer',
+        'pdOtherFH'
+    ].forEach(id => {
+        const el = byId(id);
+        if (el) el.readOnly = readonly;
+    });
+}
+
+function loadPatientDetails(patient) {
+    currentPatientId = patient.id;
+
+    byId('pdNameText').textContent =
+        `${patient.name || ''} ${patient.lastName || ''}`;
+
+    byId('pdName').value = patient.name || '';
+    byId('pdLastName').value = patient.lastName || '';
+    byId('pdEmail').value = patient.email || '';
+    byId('pdPhone').value = patient.phone || '';
+    byId('pdDOB').value = patient.dateOfBirth || '';
+    byId('pdBloodType').value = patient.bloodType || '';
+    byId('pdAllergies').value = patient.allergies || '';
+    byId('pdChronicConditions').value = patient.chronicConditions || '';
+    byId('pdMedications').value = 'No data';
+
+    byId('pdDiabetes').value = patient.familyHistory || '';
+    byId('pdHypertension').value = patient.familyHistory || '';
+    byId('pdCancer').value = patient.cancerHistory || '';
+    byId('pdOtherFH').value = patient.geneticDisorders || '';
+
+    setPersonalInfoReadonly(true);
+
+    if (byId('btnEditInfo')) {
+        byId('btnEditInfo').style.display = 'inline-block';
+    }
+
+    if (byId('btnSaveInfo')) {
+        byId('btnSaveInfo').style.display = 'none';
+    }
+
+    loadPrescriptions(patient.id);
+    loadProgressNotes(patient.id);
+}
+
+function loadPrescriptions(patientId) {
+    fetch(`/doctor/patient/${patientId}/prescriptions`)
+        .then(res => res.json())
+        .then(data => {
+            const list = byId('medicationList');
+            if (!list) return;
+
+            if (!data || data.length === 0) {
+                list.innerHTML = '<p style="color:#999;font-size:13px;">No prescriptions found.</p>';
+                return;
+            }
+
+            list.innerHTML = data.map(p => `
+                <div class="med-item">
+                    <span class="med-name">${p.medications || '—'}</span>
+                    <span class="med-dose">${p.dosage || '—'}</span>
+                    <span class="med-start">${p.date || '—'}</span>
+                    <p style="width:100%;font-size:12px;color:#666;">
+                        <strong>Diagnosis:</strong> ${p.diagnosis || '—'}<br>
+                        <strong>Instructions:</strong> ${p.instructions || '—'}<br>
+                        <strong>Notes:</strong> ${p.notes || '—'}
+                    </p>
+                </div>
+            `).join('');
+        })
+        .catch(err => {
+            console.error(err);
+            toast('Error loading prescriptions');
+        });
+}
+
+function loadProgressNotes(patientId) {
+    fetch(`/doctor/patient/${patientId}/progress-notes`)
+        .then(res => res.json())
+        .then(data => {
+            const list = byId('progressNotesList');
+            if (!list) return;
+
+            if (!data || data.length === 0) {
+                list.innerHTML = '<p style="color:#999;font-size:13px;">No progress notes found.</p>';
+                return;
+            }
+
+            list.innerHTML = data.map(n => `
+                <div class="note-item">
+                    <div class="note-header">
+                        <span class="note-date">${n.date || '—'}</span>
+                        <span class="note-author">Doctor</span>
+                    </div>
+                    <div class="note-body">
+                        <p><strong>Subjective:</strong> ${n.subjective || '—'}</p>
+                        <p><strong>Objective:</strong> ${n.objective || '—'}</p>
+                        <p><strong>Assessment:</strong> ${n.assessment || '—'}</p>
+                        <p><strong>Plan:</strong> ${n.plan || '—'}</p>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(err => {
+            console.error(err);
+            toast('Error loading progress notes');
+        });
+}
+
+byId('btnCloseNew')?.addEventListener('click', function () {
+    showPatientView('v-list', 'Mine patients');
+});
+
+document.querySelector('#sec-patients')?.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('access-link')) return;
+
+    e.preventDefault();
+
+    const patientId =
+        e.target.dataset.id ||
+        e.target.closest('tr')?.dataset.id;
+
+    if (!patientId) {
+        toast('No patient ID found');
+        return;
+    }
+
+    fetch(`/doctor/patient/${patientId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Patient not found');
+            return response.json();
+        })
+        .then(patient => {
+            loadPatientDetails(patient);
+
+            showPatientView(
+                'v-detail',
+                `${patient.name || ''} ${patient.lastName || ''}`
+            );
+
+            document
+                .querySelectorAll('#sec-patients .pd-sec')
+                .forEach(s => s.classList.remove('active'));
+
+            document
+                .querySelectorAll('#sec-patients .pd-link')
+                .forEach(b => b.classList.remove('active'));
+
+            byId('pd-personal')?.classList.add('active');
+
+            document
+                .querySelector('#sec-patients .pd-link[data-pd="pd-personal"]')
+                ?.classList.add('active');
+        })
+        .catch(error => {
+            console.error(error);
+            toast('Error loading patient');
+        });
+});
+
+byId('btnCloseDetail')?.addEventListener('click', function () {
+    showPatientView('v-list', 'Mine patients');
+});
+
+document.querySelectorAll('#sec-patients .pd-link').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const target = this.getAttribute('data-pd');
+
+        document
+            .querySelectorAll('#sec-patients .pd-sec')
+            .forEach(s => s.classList.remove('active'));
+
+        document
+            .querySelectorAll('#sec-patients .pd-link')
+            .forEach(b => b.classList.remove('active'));
+
+        byId(target)?.classList.add('active');
+        this.classList.add('active');
+    });
+});
+
+byId('btnEditInfo')?.addEventListener('click', function () {
+    setPersonalInfoReadonly(false);
+
+    if (byId('btnEditInfo')) {
+        byId('btnEditInfo').style.display = 'none';
+    }
+
+    if (byId('btnSaveInfo')) {
+        byId('btnSaveInfo').style.display = 'inline-block';
+    }
+});
+
+byId('btnSaveInfo')?.addEventListener('click', function () {
+    if (!currentPatientId) {
+        toast('No patient selected');
+        return;
+    }
+
+    const body = new URLSearchParams({
+        name: byId('pdName')?.value || '',
+        lastName: byId('pdLastName')?.value || '',
+        email: byId('pdEmail')?.value || '',
+        phone: byId('pdPhone')?.value || '',
+        dateOfBirth: byId('pdDOB')?.value || '',
+        bloodType: byId('pdBloodType')?.value || '',
+        allergies: byId('pdAllergies')?.value || '',
+        chronicConditions: byId('pdChronicConditions')?.value || '',
+        familyHistory: byId('pdDiabetes')?.value || '',
+        cancerHistory: byId('pdCancer')?.value || '',
+        geneticDisorders: byId('pdOtherFH')?.value || ''
+    });
+
+    fetch(`/doctor/patient/${currentPatientId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: body
+    })
+        .then(res => {
+            if (!res.ok) throw new Error('Error updating patient');
+            return res.json();
+        })
+        .then(patient => {
+            loadPatientDetails(patient);
+            toast('✅ Patient information updated');
+        })
+        .catch(err => {
+            console.error(err);
+            toast('Error saving patient information');
+        });
+});
+
+byId('btnSavePrescription')?.addEventListener('click', function () {
+    if (!currentPatientId) {
+        toast('No patient selected');
+        return;
+    }
+
+    const body = new URLSearchParams({
+        diagnosis: byId('rxDiagnosis')?.value || '',
+        medications: byId('rxMedications')?.value || '',
+        dosage: byId('rxDosage')?.value || '',
+        instructions: byId('rxInstructions')?.value || '',
+        notes: byId('rxNotes')?.value || ''
+    });
+
+    fetch(`/doctor/patient/${currentPatientId}/prescription`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: body
+    })
+        .then(res => {
+            if (!res.ok) throw new Error('Error saving prescription');
+            return res.json();
+        })
+        .then(() => {
+            toast('✅ Prescription saved');
+
+            ['rxDiagnosis', 'rxMedications', 'rxDosage', 'rxInstructions', 'rxNotes']
+                .forEach(id => {
+                    const el = byId(id);
+                    if (el) el.value = '';
+                });
+
+            loadPrescriptions(currentPatientId);
+        })
+        .catch(err => {
+            console.error(err);
+            toast('Error saving prescription');
+        });
+});
+
+byId('btnSaveProgressNote')?.addEventListener('click', function () {
+    if (!currentPatientId) {
+        toast('No patient selected');
+        return;
+    }
+
+    const body = new URLSearchParams({
+        subjective: byId('pnSubjective')?.value || '',
+        objective: byId('pnObjective')?.value || '',
+        assessment: byId('pnAssessment')?.value || '',
+        plan: byId('pnPlan')?.value || ''
+    });
+
+    fetch(`/doctor/patient/${currentPatientId}/progress-note`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: body
+    })
+        .then(res => {
+            if (!res.ok) throw new Error('Error saving progress note');
+            return res.json();
+        })
+        .then(() => {
+            toast('✅ Progress note saved');
+
+            ['pnSubjective', 'pnObjective', 'pnAssessment', 'pnPlan']
+                .forEach(id => {
+                    const el = byId(id);
+                    if (el) el.value = '';
+                });
+
+            loadProgressNotes(currentPatientId);
+        })
+        .catch(err => {
+            console.error(err);
+            toast('Error saving progress note');
+        });
+});
+
+byId('btnPhoto')?.addEventListener('click', function () {
+    byId('photoInput')?.click();
+});
+
+byId('photoInput')?.addEventListener('change', function () {
+    if (this.files && this.files[0]) {
+        toast('📷 ' + this.files[0].name);
+    }
+});
+
+byId('btnFinished')?.addEventListener('click', function () {
+    const name = byId('npName')?.value.trim();
+
+    if (!name) {
+        toast('⚠️ Name is required');
+        return;
+    }
+
+    toast('✅ Patient saved: ' + name);
+
+    document
+        .querySelectorAll('#sec-patients .np-inp')
+        .forEach(inp => inp.value = '');
+
+    showPatientView('v-list', 'Mine patients');
+});
+
+console.log("✅ DASHBOARD JS NUEVO 2026-06-02");
 })();

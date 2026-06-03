@@ -142,9 +142,268 @@
      PATIENTS
 ========================= -->
 <section id="sec-patients" class="msec">
-    <div class="ph">
-        Patients section — Coming soon
+    <div class="pbar">
+        <h1 id="pageTitle" th:text="'Patients — ' + ${doctor.name}">Patients — Doctor</h1>
+        <form th:action="@{/logout}" method="post" style="display:inline;">
+            <button type="submit" class="btn-out">💨 Log out</button>
+        </form>
     </div>
+
+<div class="v-list" id="v-list">
+    <div class="apill">Mine patients</div>
+    <table class="atable">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="p : ${patients}"
+                 th:attr="data-id=${p.id}">
+                <td th:text="${p.fullName}">Patient Name</td>
+                <td>
+                    <a href="#"
+   class="access-link"
+   th:attr="data-id=${p.id}">
+    Access patient information
+</a>
+                </td>
+            </tr>
+            <tr th:if="${patients.isEmpty()}">
+                <td colspan="2" style="text-align:center; padding:20px; color:#999;">No patients found</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+    <div class="v-new" id="v-new" style="display:none;">
+        <div class="np-head">
+            <h2>New patient</h2>
+            <button class="abtn" id="btnCloseNew">✕ Close</button>
+        </div>
+        <div class="np-form">
+            <div class="np-field">
+                <label>General</label>
+                <input type="text" class="np-inp np-name" id="npName" placeholder="Name">
+            </div>
+            <div class="np-field">
+                <input type="text" class="np-inp" id="npPhone" placeholder="Phone number">
+            </div>
+            <div class="np-field">
+                <input type="email" class="np-inp" id="npEmail" placeholder="Email">
+            </div>
+            <div class="np-field">
+                <input type="date" class="np-inp" id="npDOB" placeholder="Date of Birth">
+            </div>
+            <div class="np-field">
+                <textarea class="np-inp" id="npHistory" placeholder="Past Medical History"></textarea>
+            </div>
+            <div class="np-field">
+                <input type="text" class="np-inp" id="npBlood" placeholder="Blood type">
+            </div>
+            <div class="np-field">
+                <textarea class="np-inp" id="npAllergies" placeholder="Allergies"></textarea>
+            </div>
+            <div class="np-field">
+                <textarea class="np-inp" id="npChronic" placeholder="Chronic conditions"></textarea>
+            </div>
+            <div class="np-field">
+                <textarea class="np-inp" id="npMeds" placeholder="Medications"></textarea>
+            </div>
+            <div class="np-field">
+                <label>Family History</label>
+                <input type="checkbox" id="fhDiabetes"> <label for="fhDiabetes">Diabetes</label>
+                <input type="checkbox" id="fhHypertension"> <label for="fhHypertension">Hypertension</label>
+                <input type="checkbox" id="fhCancer"> <label for="fhCancer">Cancer</label>
+            </div>
+            <div class="np-field">
+                <label>Genetic Disorders</label>
+                <textarea class="np-inp" id="npGenetic" placeholder="Genetic Disorders"></textarea>
+            </div>
+            <div class="np-field">
+                <label>Social History</label>
+                <input type="text" class="np-inp" id="npSmoking" placeholder="Smoking">
+                <input type="text" class="np-inp" id="npAlcohol" placeholder="Alcohol">
+                <input type="text" class="np-inp" id="npDrugs" placeholder="Drugs">
+                <input type="text" class="np-inp" id="npActivity" placeholder="Physical activity">
+                <input type="text" class="np-inp" id="npOccupation" placeholder="Occupation">
+                <input type="text" class="np-inp" id="npLiving" placeholder="Living situation">
+            </div>
+            <div class="np-field">
+                <label>Profile Photo</label>
+                <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                <button class="abtn" id="btnPhoto">📷 Add photo</button>
+            </div>
+            <button class="abtn" id="btnFinished">✅ Finished</button>
+        </div>
+    </div>
+
+<div class="v-detail" id="v-detail" style="display:none;">
+    <!-- Cabecera -->
+    <div class="pd-head">
+        <h2 id="pdNameText">Patient Detail</h2>
+        <button class="abtn" id="btnCloseDetail">✕ Close</button>
+    </div>
+
+    <!-- Menú lateral -->
+    <div class="pd-sidebar">
+        <button class="pd-link active" data-pd="pd-personal">Personal information</button>
+        <button class="pd-link" data-pd="pd-medication">Medication history</button>
+        <button class="pd-link" data-pd="pd-progress">Progress Notes</button>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="pd-content">
+        <!-- Personal information (ESTRUCTURA CLÍNICA) -->
+        <div class="pd-sec active" id="pd-personal">
+            <h3>General</h3>
+            <div class="pd-grid">
+                <div class="pd-field">
+                    <label>Name</label>
+                    <input type="text" class="pd-inp" id="pdName" readonly>
+                </div>
+                <div class="pd-field">
+                    <label>Last name</label>
+                    <input type="text" class="pd-inp" id="pdLastName" readonly>
+                </div>
+                <div class="pd-field">
+                    <label>Email</label>
+                    <input type="text" class="pd-inp" id="pdEmail" readonly>
+                </div>
+                <div class="pd-field">
+                    <label>Phone number</label>
+                    <input type="text" class="pd-inp" id="pdPhone" readonly>
+                </div>
+                <div class="pd-field">
+                    <label>Date of Birth</label>
+                    <input type="text" class="pd-inp" id="pdDOB" readonly>
+                </div>
+            </div>
+
+            <h3>Past Medical History</h3>
+            <div class="pd-grid">
+                <div class="pd-field">
+                    <label>Blood type</label>
+                    <input type="text" class="pd-inp" id="pdBloodType" readonly>
+                </div>
+                <div class="pd-field">
+                    <label>Allergies</label>
+                    <input type="text" class="pd-inp" id="pdAllergies" readonly>
+                </div>
+                <div class="pd-field">
+                    <label>Chronic conditions</label>
+                    <input type="text" class="pd-inp" id="pdChronicConditions" readonly>
+                </div>
+                <div class="pd-field">
+                    <label>Medications</label>
+                    <input type="text" class="pd-inp" id="pdMedications" readonly>
+                </div>
+            </div>
+
+            <h3>Family History</h3>
+            <div class="pd-grid">
+                <div class="pd-field">
+                    <label>Diabetes</label>
+                    <input type="text" class="pd-inp" id="pdDiabetes" readonly>
+                </div>
+                <div class="pd-field">
+                    <label>Hypertension</label>
+                    <input type="text" class="pd-inp" id="pdHypertension" readonly>
+                </div>
+                <div class="pd-field">
+                    <label>Cancer</label>
+                    <input type="text" class="pd-inp" id="pdCancer" readonly>
+                </div>
+                <div class="pd-field">
+                    <label>Other</label>
+                    <input type="text" class="pd-inp" id="pdOtherFH" readonly>
+                </div>
+            </div>
+
+            <button class="abtn" id="btnEditInfo">✏️ Edit the information</button>
+            <button class="abtn" id="btnSaveInfo" style="display:none;">
+                💾 Save information
+            </button>
+        </div>
+
+        <!-- Medication History -->
+        <div class="pd-sec" id="pd-medication">
+            <h3>Medication History</h3>
+
+            <div class="pd-grid">
+                <div class="pd-field">
+                    <label>Diagnosis</label>
+                    <input type="text" class="pd-inp" id="rxDiagnosis">
+                </div>
+
+                <div class="pd-field">
+                    <label>Medication</label>
+                    <input type="text" class="pd-inp" id="rxMedications">
+                </div>
+
+                <div class="pd-field">
+                    <label>Dosage</label>
+                    <input type="text" class="pd-inp" id="rxDosage">
+                </div>
+
+                <div class="pd-field">
+                    <label>Instructions</label>
+                    <input type="text" class="pd-inp" id="rxInstructions">
+                </div>
+
+                <div class="pd-field">
+                    <label>Notes</label>
+                    <input type="text" class="pd-inp" id="rxNotes">
+                </div>
+            </div>
+
+            <button class="abtn" id="btnSavePrescription">
+                💊 Save prescription
+            </button>
+
+            <div class="med-list" id="medicationList">
+                <p style="color:#999;font-size:13px;">No prescriptions found.</p>
+            </div>
+        </div>
+
+        <!-- Progress Notes -->
+        <div class="pd-sec" id="pd-progress">
+            <h3>Progress Notes</h3>
+
+            <div class="pd-grid">
+                <div class="pd-field">
+                    <label>Subjective</label>
+                    <textarea class="pd-inp" id="pnSubjective"></textarea>
+                </div>
+
+                <div class="pd-field">
+                    <label>Objective</label>
+                    <textarea class="pd-inp" id="pnObjective"></textarea>
+                </div>
+
+                <div class="pd-field">
+                    <label>Assessment</label>
+                    <textarea class="pd-inp" id="pnAssessment"></textarea>
+                </div>
+
+                <div class="pd-field">
+                    <label>Plan</label>
+                    <textarea class="pd-inp" id="pnPlan"></textarea>
+                </div>
+            </div>
+
+            <button class="abtn" id="btnSaveProgressNote">
+                📝 Save progress note
+            </button>
+
+            <div id="progressNotesList">
+                <p style="color:#999;font-size:13px;">No progress notes found.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 </section>
 
 <!-- =========================
