@@ -410,9 +410,100 @@
      ARCHIVES
 ========================= -->
 <section id="sec-archives" class="msec">
-    <div class="ph">
-        Archives section — Coming soon
+
+    <div class="arc-wrap">
+
+        <!-- LEFT: patient selector -->
+        <div class="arc-left">
+            <div class="arc-left-hdr">Patients</div>
+
+            <div class="psw">
+                <input class="psi" id="arcPatientSearch" type="text" placeholder="Find patient…">
+                <span style="color:rgba(255,255,255,.8);font-size:14px">🔍</span>
+            </div>
+
+            <div class="p-list" id="arcPatientList">
+
+                <div class="p-item"
+                     th:each="p : ${patients}"
+                     th:attr="data-id=${p.id}, data-name=${p.fullName}">
+
+                    <div class="p-av"
+                         th:text="${#strings.substring(p.name,0,1)}">
+                        P
+                    </div>
+
+                    <div class="p-nm"
+                         th:text="${p.fullName}">
+                        Patient Name
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RIGHT: file area -->
+        <div class="arc-right">
+
+            <div class="arc-empty" id="arcEmpty">
+                <div class="arc-empty-ico">🗂️</div>
+                <div class="arc-empty-txt">Select a patient to view their files</div>
+            </div>
+
+            <div class="arc-fa" id="arcFA">
+
+                <div class="arc-ph">
+                    <div class="arc-pname" id="arcPN"></div>
+                </div>
+
+                <div class="ctabs" id="arcCategoryTabs"></div>
+
+                <div class="f-area">
+                    <div class="f-grid" id="arcFileGrid"></div>
+                </div>
+
+                <div class="up-panel" id="arcUploadPanel">
+                    <div class="up-title">Upload a PDF file</div>
+
+                    <div class="dz" id="arcDropZone">
+                        <div class="dz-ico">📄</div>
+                        <div class="dz-txt" id="arcDzTxt">Drag &amp; drop your PDF here</div>
+                        <div class="dz-sub" id="arcDzSub">or click to browse your device</div>
+
+                        <input
+                            type="file"
+                            id="arcFileInput"
+                            style="display:none"
+                            accept="application/pdf,.pdf">
+                    </div>
+
+                    <div class="up-row">
+                        <select class="up-sel" id="arcUploadCategory">
+                            <option value="RADIOGRAPHS">Radiografías</option>
+                            <option value="LABORATORIES">Laboratorios</option>
+                            <option value="STUDIES">Estudios</option>
+                            <option value="ANALYSES">Análisis</option>
+                            <option value="EXAMS">Exámenes</option>
+                        </select>
+
+                        <div class="up-acts">
+                            <button class="btn-can" id="arcBtnCancel">✕ Cancel</button>
+                            <button class="btn-sv" id="arcBtnSave">💾 Save</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="up-foot">
+                    <button class="btn-up" id="arcBtnUpload">＋ Upload PDF</button>
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
+
 </section>
 
 <!-- =========================

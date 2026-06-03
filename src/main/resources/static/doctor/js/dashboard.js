@@ -805,5 +805,325 @@ byId('btnFinished')?.addEventListener('click', function () {
     showPatientView('v-list', 'Mine patients');
 });
 
+/* =========================
+   ARCHIVES
+========================= */
+
+let arcPatientId = null;
+let arcPatientName = null;
+let arcSelectedCategory = 'RADIOGRAPHS';
+let arcPendingFile = null;
+let arcFiles = [];
+
+const ARC_CATEGORIES = [
+    { key: 'RADIOGRAPHS', label: 'Radiografías', icon: '🫁' },
+    { key: 'LABORATORIES', label: 'Laboratorios', icon: '🧪' },
+    { key: 'STUDIES', label: 'Estudios', icon: '📋' },
+    { key: 'ANALYSES', label: 'Análisis', icon: '🔬' },
+    { key: 'EXAMS', label: 'Exámenes', icon: '📄' }
+];
+
+function arcFmtSize(bytes) {
+    if (!bytes) return '—';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function arcResetDropZone() {
+    const txt = byId('arcDzTxt');
+    const sub = byId('arcDzSub');
+    const input = byId('arcFileInput');
+
+    if (txt) txt.textContent = 'Drag & drop your PDF here';
+    if (sub) sub.textContent = 'or click to browse your device';
+    if (input) input.value = '';
+
+    arcPendingFile = null;
+}
+
+function arcRenderCategories() {
+    const tabs = byId('arcCategoryTabs');
+    if (!tabs) return;
+
+    tabs.innerHTML = '';
+
+    ARC_CATEGORIES.forEach(cat => {
+        const count = arcFiles.filter(f => f.category === cat.key).length;
+
+        const btn = document.createElement('button');
+        btn.className = 'ctab' + (arcSelectedCategory === cat.key ? ' act' : '');
+        btn.innerHTML =
+            `${cat.icon} ${cat.label}` +
+            (count ? ` <small style="opacity:.65">(${count})</small>` : '');
+
+        btn.addEventListener('click', function () {
+            arcSelectedCategory = cat.key;
+            arcRenderCategories();
+            arcRenderFiles();
+        });
+
+        tabs.appendChild(btn);
+    });
+}
+
+function arcRenderFiles() {
+    const grid = byId('arcFileGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    const filtered = arcFiles.filter(f => f.category === arcSelectedCategory);
+
+    if (!filtered.length) {
+        const empty = document.createElement('div');
+        empty.className = 'f-empty';
+        empty.textContent = 'No PDF files in this category yet.';
+        grid.appendChild(empty);
+        return;
+    }
+
+    filtered.forEach(file => {
+        const item = document.createElement('div');
+        item.className = 'f-item';
+
+        item.innerHTML = `
+            <div class="f-ico">📄</div>
+            <div class="f-inf">
+                <div class="f-nm">${file.fileName || 'PDF file'}</div>
+                <div class="f-meta">${file.date || '—'} · PDF</div>
+            </div>
+            <button class="f-del" title="Delete">🗑️</button>
+        `;
+
+        item.addEventListener('click', function () {
+            window.open(`/doctor/file/${file.id}`, '_blank');
+        });
+
+        item.querySelector('.f-del').addEventListener('click', function (e) {
+            e.stopPropagation();
+            arcDeleteFile(file.id);
+        });
+
+        grid.appendChild(item);
+    });
+}
+
+function arcLoadFiles(patientId) {
+    fetch(`/doctor/patient/${patientId}/files`)
+        .then(res => {
+            if (!res.ok) throw new Error('Error loading files');
+            return res.json();
+        })
+        .then(files => {
+            arcFiles = files || [];
+            arcRenderCategories();
+            arcRenderFiles();
+        })
+        .catch(err => {
+            console.error(err);
+            toast('Error loading patient files');
+        });
+}
+
+function arcSelectPatient(patientId, patientName) {
+    arcPatientId = patientId;
+    arcPatientName = patientName;
+    arcSelectedCategory = 'RADIOGRAPHS';
+    arcPendingFile = null;
+
+    document
+        .querySelectorAll('#sec-archives .p-item')
+        .forEach(p => p.classList.remove('sel'));
+
+    const selected = document.querySelector(`#sec-archives .p-item[data-id="${patientId}"]`);
+    if (selected) selected.classList.add('sel');
+
+    if (byId('arcEmpty')) {
+        byId('arcEmpty').style.display = 'none';
+    }
+
+    if (byId('arcFA')) {
+        byId('arcFA').classList.add('open');
+    }
+
+    if (byId('arcPN')) {
+        byId('arcPN').textContent = patientName;
+    }
+
+    if (byId('arcUploadPanel')) {
+        byId('arcUploadPanel').classList.remove('open');
+    }
+
+    if (byId('arcBtnUpload')) {
+        byId('arcBtnUpload').style.display = '';
+    }
+
+    arcResetDropZone();
+    arcLoadFiles(patientId);
+}
+
+function arcUploadFile() {
+    if (!arcPatientId) {
+        toast('Select a patient first');
+        return;
+    }
+
+    if (!arcPendingFile) {
+        toast('⚠️ Select a PDF first');
+        return;
+    }
+
+    if (arcPendingFile.type !== 'application/pdf') {
+        toast('⚠️ Only PDF files are allowed');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('category', byId('arcUploadCategory')?.value || 'RADIOGRAPHS');
+    formData.append('file', arcPendingFile);
+
+    fetch(`/doctor/patient/${arcPatientId}/files`, {
+        method: 'POST',
+        body: formData
+    })
+        .then(res => {
+            if (!res.ok) throw new Error('Error uploading file');
+            return res.json();
+        })
+        .then(() => {
+            toast('✅ PDF uploaded');
+
+            if (byId('arcUploadPanel')) {
+                byId('arcUploadPanel').classList.remove('open');
+            }
+
+            if (byId('arcBtnUpload')) {
+                byId('arcBtnUpload').style.display = '';
+            }
+
+            arcResetDropZone();
+            arcLoadFiles(arcPatientId);
+        })
+        .catch(err => {
+            console.error(err);
+            toast('Error uploading PDF');
+        });
+}
+
+function arcDeleteFile(fileId) {
+    fetch(`/doctor/file/${fileId}`, {
+        method: 'DELETE'
+    })
+        .then(res => {
+            if (!res.ok) throw new Error('Error deleting file');
+            return res.text();
+        })
+        .then(() => {
+            toast('🗑️ PDF deleted');
+            arcLoadFiles(arcPatientId);
+        })
+        .catch(err => {
+            console.error(err);
+            toast('Error deleting PDF');
+        });
+}
+
+byId('arcPatientSearch')?.addEventListener('input', function () {
+    const q = this.value.toLowerCase();
+
+    document
+        .querySelectorAll('#sec-archives .p-item')
+        .forEach(item => {
+            const name = item.dataset.name?.toLowerCase() || '';
+            item.style.display = name.includes(q) ? '' : 'none';
+        });
+});
+
+document.querySelector('#arcPatientList')?.addEventListener('click', function (e) {
+    const item = e.target.closest('.p-item');
+    if (!item) return;
+
+    const patientId = item.dataset.id;
+    const patientName = item.dataset.name || 'Patient';
+
+    arcSelectPatient(patientId, patientName);
+});
+
+byId('arcBtnUpload')?.addEventListener('click', function () {
+    if (!arcPatientId) {
+        toast('Select a patient first');
+        return;
+    }
+
+    byId('arcUploadPanel')?.classList.add('open');
+
+    if (byId('arcBtnUpload')) {
+        byId('arcBtnUpload').style.display = 'none';
+    }
+
+    if (byId('arcUploadCategory')) {
+        byId('arcUploadCategory').value = arcSelectedCategory;
+    }
+});
+
+byId('arcBtnCancel')?.addEventListener('click', function () {
+    byId('arcUploadPanel')?.classList.remove('open');
+
+    if (byId('arcBtnUpload')) {
+        byId('arcBtnUpload').style.display = '';
+    }
+
+    arcResetDropZone();
+});
+
+byId('arcBtnSave')?.addEventListener('click', arcUploadFile);
+
+byId('arcDropZone')?.addEventListener('click', function () {
+    byId('arcFileInput')?.click();
+});
+
+byId('arcDropZone')?.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    this.classList.add('over');
+});
+
+byId('arcDropZone')?.addEventListener('dragleave', function () {
+    this.classList.remove('over');
+});
+
+byId('arcDropZone')?.addEventListener('drop', function (e) {
+    e.preventDefault();
+    this.classList.remove('over');
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        arcHandleSelectedFile(e.dataTransfer.files[0]);
+    }
+});
+
+byId('arcFileInput')?.addEventListener('change', function () {
+    if (this.files && this.files[0]) {
+        arcHandleSelectedFile(this.files[0]);
+    }
+});
+
+function arcHandleSelectedFile(file) {
+    if (file.type !== 'application/pdf') {
+        toast('⚠️ Only PDF files are allowed');
+        arcResetDropZone();
+        return;
+    }
+
+    arcPendingFile = file;
+
+    if (byId('arcDzTxt')) {
+        byId('arcDzTxt').textContent = '📎 ' + file.name;
+    }
+
+    if (byId('arcDzSub')) {
+        byId('arcDzSub').textContent = arcFmtSize(file.size);
+    }
+}
+
 console.log("✅ DASHBOARD JS NUEVO 2026-06-02");
 })();

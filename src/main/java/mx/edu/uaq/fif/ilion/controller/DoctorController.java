@@ -1,24 +1,37 @@
 package mx.edu.uaq.fif.ilion.controller;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.UUID;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import mx.edu.uaq.fif.ilion.entity.Appointment;
+import mx.edu.uaq.fif.ilion.entity.MedicalFile;
 import mx.edu.uaq.fif.ilion.entity.Prescription;
 import mx.edu.uaq.fif.ilion.entity.ProgressNote;
 import mx.edu.uaq.fif.ilion.entity.User;
 import mx.edu.uaq.fif.ilion.repository.AppointmentRepository;
+import mx.edu.uaq.fif.ilion.repository.MedicalFileRepository;
 import mx.edu.uaq.fif.ilion.repository.PrescriptionRepository;
 import mx.edu.uaq.fif.ilion.repository.ProgressNoteRepository;
 import mx.edu.uaq.fif.ilion.repository.UserRepository;
@@ -30,17 +43,20 @@ public class DoctorController {
     private final AppointmentRepository appointmentRepository;
     private final PrescriptionRepository prescriptionRepository;
     private final ProgressNoteRepository progressNoteRepository;
+    private final MedicalFileRepository medicalFileRepository;
 
     public DoctorController(
             UserRepository userRepository,
             AppointmentRepository appointmentRepository,
             PrescriptionRepository prescriptionRepository,
-            ProgressNoteRepository progressNoteRepository) {
+            ProgressNoteRepository progressNoteRepository,
+            MedicalFileRepository medicalFileRepository) {
 
         this.userRepository = userRepository;
         this.appointmentRepository = appointmentRepository;
         this.prescriptionRepository = prescriptionRepository;
         this.progressNoteRepository = progressNoteRepository;
+        this.medicalFileRepository = medicalFileRepository;
     }
 
     @GetMapping("/doctor/dashboard")
@@ -215,6 +231,102 @@ public class DoctorController {
         note.setPlan(plan);
 
         return progressNoteRepository.save(note);
+    }
+
+    @GetMapping("/doctor/patient/{id}/files")
+    @ResponseBody
+    public List<MedicalFile> getPatientFiles(@PathVariable Long id) {
+        User patient = getPatientOrThrow(id);
+        return medicalFileRepository.findByPatientOrderByDateDesc(patient);
+    }
+
+    @PostMapping("/doctor/patient/{id}/files")
+    @ResponseBody
+    public MedicalFile uploadPatientFile(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @RequestParam String category,
+            @RequestParam MultipartFile file) throws IOException {
+
+        User doctor = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Doctor no encontrado"));
+
+        User patient = getPatientOrThrow(id);
+
+        if (file.isEmpty()) {
+            throw new RuntimeException("Archivo vacío");
+        }
+
+        String originalName = file.getOriginalFilename();
+
+        if (originalName == null || !originalName.toLowerCase().endsWith(".pdf")) {
+            throw new RuntimeException("Solo se permiten archivos PDF");
+        }
+
+        MedicalFile.MedicalFileCategory fileCategory =
+                MedicalFile.MedicalFileCategory.valueOf(category);
+
+        Path uploadDir = Paths.get(
+                "uploads",
+                "medical-files",
+                "patient_" + patient.getId()
+        );
+
+        Files.createDirectories(uploadDir);
+
+        String safeFileName =
+                UUID.randomUUID() + "_" + originalName.replaceAll("[^a-zA-Z0-9._-]", "_");
+
+        Path filePath = uploadDir.resolve(safeFileName);
+
+        Files.copy(file.getInputStream(), filePath);
+
+        MedicalFile medicalFile = new MedicalFile();
+        medicalFile.setDoctor(doctor);
+        medicalFile.setPatient(patient);
+        medicalFile.setDate(LocalDate.now());
+        medicalFile.setFileName(originalName);
+        medicalFile.setFilePath(filePath.toString());
+        medicalFile.setType(MedicalFile.MedicalFileType.PDF);
+        medicalFile.setCategory(fileCategory);
+
+        return medicalFileRepository.save(medicalFile);
+    }
+
+    @GetMapping("/doctor/file/{id}")
+    public ResponseEntity<Resource> viewMedicalFile(@PathVariable Long id) throws IOException {
+
+        MedicalFile medicalFile = medicalFileRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Archivo no encontrado"));
+
+        Path path = Paths.get(medicalFile.getFilePath());
+        Resource resource = new UrlResource(path.toUri());
+
+        if (!resource.exists()) {
+            throw new RuntimeException("El archivo no existe en el servidor");
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + medicalFile.getFileName() + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                .body(resource);
+    }
+
+    @DeleteMapping("/doctor/file/{id}")
+    @ResponseBody
+    public String deleteMedicalFile(@PathVariable Long id) throws IOException {
+
+        MedicalFile medicalFile = medicalFileRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Archivo no encontrado"));
+
+        Path path = Paths.get(medicalFile.getFilePath());
+
+        Files.deleteIfExists(path);
+
+        medicalFileRepository.delete(medicalFile);
+
+        return "OK";
     }
 
     @GetMapping("/doctor/patients")
