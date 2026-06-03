@@ -510,9 +510,161 @@
      PROFILE
 ========================= -->
 <section id="sec-perfil" class="msec">
-    <div class="ph">
-        Profile section — Coming soon
+
+    <div class="profile-layout">
+
+        <div class="profile-sidebar">
+            <div class="profile-title">Profile</div>
+
+            <button class="profile-link active" data-profile-sec="profile-info">
+                Personal information
+            </button>
+
+            <button class="profile-link" data-profile-sec="profile-schedule">
+                Schedule
+            </button>
+        </div>
+
+        <div class="profile-content">
+
+            <!-- PERSONAL INFORMATION -->
+            <div id="profile-info" class="profile-sec active">
+
+                <div class="card-gray" id="doctorInfoView">
+
+                    <div class="card-gray-title">Personal information</div>
+
+                    <div class="fg">
+
+                        <div class="ff">
+                            <div class="flbl">Name</div>
+                            <div class="fv" id="docName" th:text="${doctor.name}">Doctor</div>
+                        </div>
+
+                        <div class="ff">
+                            <div class="flbl">Last name</div>
+                            <div class="fv" id="docLastName" th:text="${doctor.lastName}">Last name</div>
+                        </div>
+
+                        <div class="ff">
+                            <div class="flbl">Email</div>
+                            <div class="fv" id="docEmail" th:text="${doctor.email}">doctor@email.com</div>
+                        </div>
+
+                        <div class="ff">
+                            <div class="flbl">Phone</div>
+                            <div class="fv" id="docPhone" th:text="${doctor.phone}">—</div>
+                        </div>
+
+                        <div class="ff full">
+                            <div class="flbl">Specialty</div>
+                            <div class="fv" id="docSpecialty" th:text="${doctor.specialty}">—</div>
+                        </div>
+
+                        <div class="ff full">
+                            <div class="flbl">Professional License</div>
+                            <div class="fv" id="docLicense" th:text="${doctor.licenseNumber}">—</div>
+                        </div>
+
+                    </div>
+
+                    <div class="fr">
+                        <button class="btn" id="btnEditDoctor">
+                            ✏️ Edit the information
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="card-purple" id="doctorInfoEdit">
+
+                    <div class="card-purple-title">Edit the information</div>
+
+                    <div class="fg">
+
+                        <div class="ff">
+                            <div class="flbl-white">Name</div>
+                            <input class="fi-p" id="editDocName" type="text">
+                        </div>
+
+                        <div class="ff">
+                            <div class="flbl-white">Last name</div>
+                            <input class="fi-p" id="editDocLastName" type="text">
+                        </div>
+
+                        <div class="ff">
+                            <div class="flbl-white">Email</div>
+                            <input class="fi-p" id="editDocEmail" type="email">
+                        </div>
+
+                        <div class="ff">
+                            <div class="flbl-white">Phone</div>
+                            <input class="fi-p" id="editDocPhone" type="text">
+                        </div>
+
+                        <div class="ff full">
+                            <div class="flbl-white">Specialty</div>
+                            <input class="fi-p" id="editDocSpecialty" type="text">
+                        </div>
+
+                        <div class="ff full">
+                            <div class="flbl-white">Professional License</div>
+                            <input class="fi-p" id="editDocLicense" type="text">
+                        </div>
+
+                    </div>
+
+                    <div class="fr">
+                        <button class="btn-s" id="btnSaveDoctorInfo">
+                            💾 Save
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- SCHEDULE VISUAL -->
+            <div id="profile-schedule" class="profile-sec">
+
+                <div class="sched-card">
+
+                    <div class="sched-title">Working hours</div>
+
+                    <div id="profileSchedRows"></div>
+
+                    <div class="fr" style="margin-top:20px">
+                        <button class="btn" id="btnSaveVisualSchedule">
+                            💾 Save schedule
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="avail-card" id="profileAvailCard">
+
+                    <div class="avail-hdr">📅 Current availability</div>
+
+                    <table class="av-tbl">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Working hours</th>
+                                <th>Break</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="profileAvailBody"></tbody>
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
+
 </section>
 
 <!-- =========================

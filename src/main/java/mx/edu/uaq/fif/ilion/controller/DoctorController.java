@@ -329,6 +329,30 @@ public class DoctorController {
         return "OK";
     }
 
+    @PostMapping("/doctor/profile/update")
+    @ResponseBody
+    public User updateDoctorProfile(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam String name,
+            @RequestParam String lastName,
+            @RequestParam String email,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String specialty,
+            @RequestParam(required = false) String licenseNumber) {
+
+        User doctor = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Doctor no encontrado"));
+
+        doctor.setName(name);
+        doctor.setLastName(lastName);
+        doctor.setEmail(email);
+        doctor.setPhone(phone);
+        doctor.setSpecialty(specialty);
+        doctor.setLicenseNumber(licenseNumber);
+
+        return userRepository.save(doctor);
+    }
+
     @GetMapping("/doctor/patients")
     public String doctorPatients(Model model,
                                  @AuthenticationPrincipal UserDetails userDetails) {

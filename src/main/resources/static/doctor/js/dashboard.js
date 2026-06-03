@@ -1,343 +1,342 @@
 // dashboard.js - Versión corregida y mejorada
 (function () {
+function byId(i) {
+    return document.getElementById(i);
+}
 
-    function byId(i) {
-        return document.getElementById(i);
-    }
+const HOME_TITLE = byId('pageTitle')?.textContent || 'Welcome';
 
-    const HOME_TITLE = byId('pageTitle')?.textContent || 'Welcome';
+var TITLES = {
+    home: HOME_TITLE,
+    patients: 'Patients',
+    archives: 'Archives',
+    perfil: 'Perfil'
+};
 
-    var TITLES = {
-        home: HOME_TITLE,
-        patients: 'Patients',
-        archives: 'Archives',
-        perfil: 'Perfil'
-    };
+var MESES_ES = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
 
-    var MESES_ES = [
-        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-    ];
+var MESES = [
+    'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+    'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
+];
 
-    var MESES = [
-        'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
-        'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
-    ];
+const today = new Date();
 
-    const today = new Date();
+var cy = today.getFullYear();
+var cm = today.getMonth();
 
-    var cy = today.getFullYear();
-    var cm = today.getMonth();
+var selPat = null;
+var selPatId = null;
+var selDate = null;
 
-    var selPat = null;
-    var selPatId = null;
-    var selDate = null;
+function toast(m) {
+    var t = byId('toast');
 
-    function toast(m) {
-        var t = byId('toast');
+    if (!t) return;
 
-        if (!t) return;
+    t.textContent = m;
+    t.classList.add('show');
 
-        t.textContent = m;
-        t.classList.add('show');
+    setTimeout(function () {
+        t.classList.remove('show');
+    }, 3000);
+}
 
-        setTimeout(function () {
-            t.classList.remove('show');
-        }, 3000);
-    }
+/* =========================
+   Tabs
+========================= */
 
-    /* =========================
-       Tabs
-    ========================= */
+document.querySelectorAll('.tab[data-sec]').forEach(tab => {
 
-    document.querySelectorAll('.tab[data-sec]').forEach(tab => {
+    tab.addEventListener('click', () => {
 
-        tab.addEventListener('click', () => {
+        const k = tab.getAttribute('data-sec');
 
-            const k = tab.getAttribute('data-sec');
+        document
+            .querySelectorAll('.tab')
+            .forEach(t => t.classList.remove('active'));
 
-            document
-                .querySelectorAll('.tab')
-                .forEach(t => t.classList.remove('active'));
+        document
+            .querySelectorAll('.msec')
+            .forEach(s => s.classList.remove('active'));
 
-            document
-                .querySelectorAll('.msec')
-                .forEach(s => s.classList.remove('active'));
+        tab.classList.add('active');
 
-            tab.classList.add('active');
+        const section = byId('sec-' + k);
 
-            const section = byId('sec-' + k);
+        if (section) {
+            section.classList.add('active');
+        }
 
-            if (section) {
-                section.classList.add('active');
-            }
+        const title = byId('pageTitle');
 
-            const title = byId('pageTitle');
-
-            if (title) {
-                title.textContent = TITLES[k] || 'ÍLION';
-            }
-        });
+        if (title) {
+            title.textContent = TITLES[k] || 'ÍLION';
+        }
     });
+});
 
-    /* =========================
-       Medical Log
-    ========================= */
+/* =========================
+   Medical Log
+========================= */
 
-    byId('btnLog')?.addEventListener('click', () => {
+byId('btnLog')?.addEventListener('click', () => {
 
-        byId('sboard')?.classList.toggle('open');
+    byId('sboard')?.classList.toggle('open');
 
-        byId('btnLog')?.classList.toggle('active-log');
-    });
+    byId('btnLog')?.classList.toggle('active-log');
+});
 
-    /* =========================
-       Calendario
-    ========================= */
+/* =========================
+   Calendario
+========================= */
 
-    function buildCal() {
+function buildCal() {
 
-        const mlbl = byId('spMonth');
-        const table = byId('spCal');
+    const mlbl = byId('spMonth');
+    const table = byId('spCal');
 
-        if (!mlbl || !table) return;
+    if (!mlbl || !table) return;
 
-        const tbody = table.querySelector('tbody');
+    const tbody = table.querySelector('tbody');
 
-        if (!tbody) return;
+    if (!tbody) return;
 
-        mlbl.textContent = MESES[cm] + ' ' + cy;
+    mlbl.textContent = MESES[cm] + ' ' + cy;
 
-        tbody.innerHTML = '';
+    tbody.innerHTML = '';
 
-        const total = new Date(cy, cm + 1, 0).getDate();
+    const total = new Date(cy, cm + 1, 0).getDate();
 
-        const fd = new Date(cy, cm, 1).getDay();
+    const fd = new Date(cy, cm, 1).getDay();
 
-        const off = (fd === 0) ? 6 : fd - 1;
+    const off = (fd === 0) ? 6 : fd - 1;
 
-        for (let w = 0; w < 6; w++) {
+    for (let w = 0; w < 6; w++) {
 
-            const rs = w * 7 - off + 1;
+        const rs = w * 7 - off + 1;
 
-            if (rs > total) break;
+        if (rs > total) break;
 
-            const tr = document.createElement('tr');
+        const tr = document.createElement('tr');
 
-            for (let c = 0; c < 7; c++) {
+        for (let c = 0; c < 7; c++) {
 
-                const dn = rs + c;
+            const dn = rs + c;
 
-                const td = document.createElement('td');
+            const td = document.createElement('td');
 
-                if (dn < 1 || dn > total) {
+            if (dn < 1 || dn > total) {
 
-                    td.className = 'emp';
-                    td.textContent = '';
+                td.className = 'emp';
+                td.textContent = '';
+
+            } else {
+
+                td.textContent = dn;
+
+                const dow = new Date(cy, cm, dn).getDay();
+
+                if (dow === 0 || dow === 6) {
+
+                    td.classList.add('emp');
 
                 } else {
 
-                    td.textContent = dn;
+                    td.classList.add('has');
 
-                    const dow = new Date(cy, cm, dn).getDay();
-
-                    if (dow === 0 || dow === 6) {
-
-                        td.classList.add('emp');
-
-                    } else {
-
-                        td.classList.add('has');
-
-                        if (
-                            selDate &&
-                            dn === selDate.d &&
-                            cm === selDate.m &&
-                            cy === selDate.y
-                        ) {
-                            td.classList.add('picked');
-                        }
-
-                        td.addEventListener('click', function () {
-
-                            table
-                                .querySelectorAll('td')
-                                .forEach(t => t.classList.remove('picked'));
-
-                            this.classList.add('picked');
-
-                            selDate = {
-                                d: dn,
-                                m: cm,
-                                y: cy
-                            };
-
-                            checkSummary();
-                        });
+                    if (
+                        selDate &&
+                        dn === selDate.d &&
+                        cm === selDate.m &&
+                        cy === selDate.y
+                    ) {
+                        td.classList.add('picked');
                     }
-                }
 
-                tr.appendChild(td);
+                    td.addEventListener('click', function () {
+
+                        table
+                            .querySelectorAll('td')
+                            .forEach(t => t.classList.remove('picked'));
+
+                        this.classList.add('picked');
+
+                        selDate = {
+                            d: dn,
+                            m: cm,
+                            y: cy
+                        };
+
+                        checkSummary();
+                    });
+                }
             }
 
-            tbody.appendChild(tr);
+            tr.appendChild(td);
         }
+
+        tbody.appendChild(tr);
+    }
+}
+
+byId('spPrev')?.addEventListener('click', () => {
+
+    cm--;
+
+    if (cm < 0) {
+        cm = 11;
+        cy--;
     }
 
-    byId('spPrev')?.addEventListener('click', () => {
+    buildCal();
+});
 
-        cm--;
+byId('spNext')?.addEventListener('click', () => {
 
-        if (cm < 0) {
-            cm = 11;
-            cy--;
-        }
+    cm++;
 
-        buildCal();
-    });
-
-    byId('spNext')?.addEventListener('click', () => {
-
-        cm++;
-
-        if (cm > 11) {
-            cm = 0;
-            cy++;
-        }
-
-        buildCal();
-    });
-
-    /* =========================
-       Summary
-    ========================= */
-
-    function checkSummary() {
-
-        if (!selPat || !selDate) return;
-
-        const left = byId('spLeft');
-
-        if (left) {
-            left.style.display = 'none';
-        }
-
-        byId('spSum')?.classList.add('show');
-
-        if (byId('spPatVal')) {
-            byId('spPatVal').textContent = selPat;
-        }
-
-        if (byId('spDateVal')) {
-            byId('spDateVal').textContent =
-                selDate.d +
-                ' de ' +
-                MESES_ES[selDate.m] +
-                ' de ' +
-                selDate.y;
-        }
-
-        byId('btnConfirm')?.classList.add('show');
+    if (cm > 11) {
+        cm = 0;
+        cy++;
     }
 
-    /* =========================
-       Schedule Panel
-    ========================= */
+    buildCal();
+});
 
-    function openSp() {
+/* =========================
+   Summary
+========================= */
 
-        byId('sp')?.classList.add('open');
-        byId('spOv')?.classList.add('open');
+function checkSummary() {
 
-        buildCal();
+    if (!selPat || !selDate) return;
+
+    const left = byId('spLeft');
+
+    if (left) {
+        left.style.display = 'none';
     }
 
-    function closeSp() {
+    byId('spSum')?.classList.add('show');
 
-        byId('sp')?.classList.remove('open');
-        byId('spOv')?.classList.remove('open');
-
-        selPat = null;
-        selPatId = null;
-        selDate = null;
-
-        const left = byId('spLeft');
-
-        if (left) {
-            left.style.display = '';
-        }
-
-        byId('spSum')?.classList.remove('show');
-        byId('btnConfirm')?.classList.remove('show');
-
-        byId('plist')
-            ?.querySelectorAll('.pitem')
-            .forEach(p => p.classList.remove('sel'));
-
-        if (byId('spPatVal')) {
-            byId('spPatVal').textContent = '—';
-        }
-
-        if (byId('spDateVal')) {
-            byId('spDateVal').textContent = '—';
-        }
-
-        if (byId('spHH')) {
-            byId('spHH').value = '16';
-        }
-
-        if (byId('spMM')) {
-            byId('spMM').value = '00';
-        }
-
-        const desc = document.querySelector('.desc-ta');
-
-        if (desc) {
-            desc.value = '';
-        }
+    if (byId('spPatVal')) {
+        byId('spPatVal').textContent = selPat;
     }
 
-    /* =========================
-       Buscar paciente
-    ========================= */
+    if (byId('spDateVal')) {
+        byId('spDateVal').textContent =
+            selDate.d +
+            ' de ' +
+            MESES_ES[selDate.m] +
+            ' de ' +
+            selDate.y;
+    }
 
-    byId('psearch')?.addEventListener('input', function () {
+    byId('btnConfirm')?.classList.add('show');
+}
 
-        const q = this.value.toLowerCase();
+/* =========================
+   Schedule Panel
+========================= */
 
-        byId('plist')
-            ?.querySelectorAll('.pitem')
-            .forEach(d => {
+function openSp() {
 
-                d.style.display =
-                    d.textContent.toLowerCase().includes(q)
-                        ? ''
-                        : 'none';
-            });
-    });
+    byId('sp')?.classList.add('open');
+    byId('spOv')?.classList.add('open');
 
-    /* =========================
-       Seleccionar paciente
-    ========================= */
+    buildCal();
+}
 
-    byId('plist')?.addEventListener('click', function (e) {
+function closeSp() {
 
-        const item = e.target.closest('.pitem');
+    byId('sp')?.classList.remove('open');
+    byId('spOv')?.classList.remove('open');
 
-        if (!item) return;
+    selPat = null;
+    selPatId = null;
+    selDate = null;
 
-        this.querySelectorAll('.pitem')
-            .forEach(d => d.classList.remove('sel'));
+    const left = byId('spLeft');
 
-        item.classList.add('sel');
+    if (left) {
+        left.style.display = '';
+    }
 
-        selPat = item.textContent.trim();
-        selPatId = item.dataset.id;
+    byId('spSum')?.classList.remove('show');
+    byId('btnConfirm')?.classList.remove('show');
 
-        checkSummary();
-    });
+    byId('plist')
+        ?.querySelectorAll('.pitem')
+        .forEach(p => p.classList.remove('sel'));
 
-    /* =========================
+    if (byId('spPatVal')) {
+        byId('spPatVal').textContent = '—';
+    }
+
+    if (byId('spDateVal')) {
+        byId('spDateVal').textContent = '—';
+    }
+
+    if (byId('spHH')) {
+        byId('spHH').value = '16';
+    }
+
+    if (byId('spMM')) {
+        byId('spMM').value = '00';
+    }
+
+    const desc = document.querySelector('.desc-ta');
+
+    if (desc) {
+        desc.value = '';
+    }
+}
+
+/* =========================
+   Buscar paciente
+========================= */
+
+byId('psearch')?.addEventListener('input', function () {
+
+    const q = this.value.toLowerCase();
+
+    byId('plist')
+        ?.querySelectorAll('.pitem')
+        .forEach(d => {
+
+            d.style.display =
+                d.textContent.toLowerCase().includes(q)
+                    ? ''
+                    : 'none';
+        });
+});
+
+/* =========================
+   Seleccionar paciente
+========================= */
+
+byId('plist')?.addEventListener('click', function (e) {
+
+    const item = e.target.closest('.pitem');
+
+    if (!item) return;
+
+    this.querySelectorAll('.pitem')
+        .forEach(d => d.classList.remove('sel'));
+
+    item.classList.add('sel');
+
+    selPat = item.textContent.trim();
+    selPatId = item.dataset.id;
+
+    checkSummary();
+});
+
+/* =========================
    Confirmar cita
 ========================= */
 
@@ -404,36 +403,35 @@ byId('btnConfirm')?.addEventListener('click', function () {
     form.submit();
 });
 
-        /*
-        Aquí puedes enviar la información al backend:
+/*
+Aquí puedes enviar la información al backend:
 
-        fetch('/appointments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                patientId: selPatId,
-                day: selDate.d,
-                month: selDate.m + 1,
-                year: selDate.y,
-                hour: hh,
-                minute: mm
-            })
-        });
-        */
-    
+fetch('/appointments', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        patientId: selPatId,
+        day: selDate.d,
+        month: selDate.m + 1,
+        year: selDate.y,
+        hour: hh,
+        minute: mm
+    })
+});
+*/
 
-    /* =========================
-       Eventos panel
-    ========================= */
+/* =========================
+   Eventos panel
+========================= */
 
-    byId('btnSched')?.addEventListener('click', openSp);
-    byId('spClose')?.addEventListener('click', closeSp);
-    byId('spMin')?.addEventListener('click', closeSp);
-    byId('spOv')?.addEventListener('click', closeSp);
+byId('btnSched')?.addEventListener('click', openSp);
+byId('spClose')?.addEventListener('click', closeSp);
+byId('spMin')?.addEventListener('click', closeSp);
+byId('spOv')?.addEventListener('click', closeSp);
 
-    // --- Lógica para la sección de Pacientes ---
+// --- Lógica para la sección de Pacientes ---
 
 let currentPatientId = null;
 
@@ -1124,6 +1122,231 @@ function arcHandleSelectedFile(file) {
         byId('arcDzSub').textContent = arcFmtSize(file.size);
     }
 }
+
+/* =========================
+   PROFILE
+========================= */
+
+document.querySelectorAll('#sec-perfil .profile-link').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const target = this.getAttribute('data-profile-sec');
+
+        document
+            .querySelectorAll('#sec-perfil .profile-sec')
+            .forEach(sec => sec.classList.remove('active'));
+
+        document
+            .querySelectorAll('#sec-perfil .profile-link')
+            .forEach(link => link.classList.remove('active'));
+
+        byId(target)?.classList.add('active');
+        this.classList.add('active');
+    });
+});
+
+/* Doctor personal information - visual edit */
+
+byId('btnEditDoctor')?.addEventListener('click', function () {
+    byId('editDocName').value = byId('docName')?.textContent.trim() || '';
+    byId('editDocLastName').value = byId('docLastName')?.textContent.trim() || '';
+    byId('editDocEmail').value = byId('docEmail')?.textContent.trim() || '';
+    byId('editDocPhone').value = byId('docPhone')?.textContent.trim() || '';
+    byId('editDocSpecialty').value = byId('docSpecialty')?.textContent.trim() || '';
+    byId('editDocLicense').value = byId('docLicense')?.textContent.trim() || '';
+
+    if (byId('doctorInfoView')) {
+        byId('doctorInfoView').style.display = 'none';
+    }
+
+    byId('doctorInfoEdit')?.classList.add('open');
+});
+
+byId('btnSaveDoctorInfo')?.addEventListener('click', function () {
+    if (byId('docName')) {
+        byId('docName').textContent = byId('editDocName')?.value || '—';
+    }
+
+    if (byId('docLastName')) {
+        byId('docLastName').textContent = byId('editDocLastName')?.value || '—';
+    }
+
+    if (byId('docEmail')) {
+        byId('docEmail').textContent = byId('editDocEmail')?.value || '—';
+    }
+
+    if (byId('docPhone')) {
+        byId('docPhone').textContent = byId('editDocPhone')?.value || '—';
+    }
+
+    if (byId('docSpecialty')) {
+        byId('docSpecialty').textContent = byId('editDocSpecialty')?.value || '—';
+    }
+
+    if (byId('docLicense')) {
+        byId('docLicense').textContent = byId('editDocLicense')?.value || '—';
+    }
+
+    byId('doctorInfoEdit')?.classList.remove('open');
+
+    if (byId('doctorInfoView')) {
+        byId('doctorInfoView').style.display = 'block';
+    }
+
+    toast('✅ Doctor information updated');
+});
+
+/* Visual schedule only */
+
+const PROFILE_DAYS = [
+    { key: 'mon', label: 'Mon', enabled: true, start: '08:00', end: '17:00', bStart: '13:00', bEnd: '14:00' },
+    { key: 'tue', label: 'Tue', enabled: true, start: '08:00', end: '17:00', bStart: '13:00', bEnd: '14:00' },
+    { key: 'wed', label: 'Wed', enabled: true, start: '08:00', end: '17:00', bStart: '13:00', bEnd: '14:00' },
+    { key: 'thu', label: 'Thu', enabled: true, start: '08:00', end: '17:00', bStart: '13:00', bEnd: '14:00' },
+    { key: 'fri', label: 'Fri', enabled: true, start: '08:00', end: '17:00', bStart: '13:00', bEnd: '14:00' },
+    { key: 'sat', label: 'Sat', enabled: false, start: '09:00', end: '13:00', bStart: '', bEnd: '' },
+    { key: 'sun', label: 'Sun', enabled: false, start: '', end: '', bStart: '', bEnd: '' }
+];
+
+function profileMk(tag, cls) {
+    const el = document.createElement(tag);
+    el.className = cls;
+    return el;
+}
+
+function buildProfileSchedule() {
+    const rows = byId('profileSchedRows');
+    if (!rows) return;
+
+    rows.innerHTML = '';
+
+    PROFILE_DAYS.forEach(day => {
+        const row = document.createElement('div');
+        row.className = 'sched-row';
+
+        const tog = document.createElement('button');
+        tog.className = 'day-tog' + (day.enabled ? ' on' : '');
+
+        const lbl = document.createElement('div');
+        lbl.className = 'day-lbl' + (day.enabled ? '' : ' off');
+        lbl.textContent = day.label;
+
+        const tg = document.createElement('div');
+        tg.className = 'time-grp';
+
+        const si = profileMk('input', 't-inp');
+        si.type = 'time';
+        si.value = day.start;
+        si.disabled = !day.enabled;
+        si.addEventListener('change', function () {
+            day.start = this.value;
+        });
+
+        const sep1 = document.createElement('span');
+        sep1.className = 't-sep';
+        sep1.textContent = '—';
+
+        const ei = profileMk('input', 't-inp');
+        ei.type = 'time';
+        ei.value = day.end;
+        ei.disabled = !day.enabled;
+        ei.addEventListener('change', function () {
+            day.end = this.value;
+        });
+
+        const bLbl = document.createElement('span');
+        bLbl.className = 'brk-lbl';
+        bLbl.textContent = 'Break:';
+
+        const bs = profileMk('input', 't-inp sm');
+        bs.type = 'time';
+        bs.value = day.bStart;
+        bs.disabled = !day.enabled;
+        bs.addEventListener('change', function () {
+            day.bStart = this.value;
+        });
+
+        const sep2 = document.createElement('span');
+        sep2.className = 't-sep';
+        sep2.textContent = '—';
+
+        const be = profileMk('input', 't-inp sm');
+        be.type = 'time';
+        be.value = day.bEnd;
+        be.disabled = !day.enabled;
+        be.addEventListener('change', function () {
+            day.bEnd = this.value;
+        });
+
+        const inputs = [si, ei, bs, be];
+
+        tog.addEventListener('click', function () {
+            day.enabled = !day.enabled;
+
+            tog.className = 'day-tog' + (day.enabled ? ' on' : '');
+            lbl.className = 'day-lbl' + (day.enabled ? '' : ' off');
+
+            inputs.forEach(inp => {
+                inp.disabled = !day.enabled;
+            });
+        });
+
+        tg.appendChild(si);
+        tg.appendChild(sep1);
+        tg.appendChild(ei);
+        tg.appendChild(bLbl);
+        tg.appendChild(bs);
+        tg.appendChild(sep2);
+        tg.appendChild(be);
+
+        row.appendChild(tog);
+        row.appendChild(lbl);
+        row.appendChild(tg);
+
+        rows.appendChild(row);
+    });
+}
+
+function renderProfileAvailability() {
+    const body = byId('profileAvailBody');
+    if (!body) return;
+
+    body.innerHTML = '';
+
+    PROFILE_DAYS.forEach(day => {
+        const tr = document.createElement('tr');
+
+        if (day.enabled) {
+            const hrs = day.start && day.end
+                ? day.start + ' – ' + day.end
+                : '—';
+
+            const brk = day.bStart && day.bEnd
+                ? day.bStart + ' – ' + day.bEnd
+                : 'None';
+
+            tr.innerHTML = `
+                <td class="av-on">${day.label}</td>
+                <td>${hrs}</td>
+                <td>${brk}</td>
+            `;
+        } else {
+            tr.innerHTML = `
+                <td class="av-off">${day.label}</td>
+                <td class="av-off" colspan="2">Not available</td>
+            `;
+        }
+
+        body.appendChild(tr);
+    });
+}
+
+byId('btnSaveVisualSchedule')?.addEventListener('click', function () {
+    renderProfileAvailability();
+    toast('✅ Schedule updated visually');
+});
+
+buildProfileSchedule();
+renderProfileAvailability();
 
 console.log("✅ DASHBOARD JS NUEVO 2026-06-02");
 })();
