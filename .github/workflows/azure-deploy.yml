@@ -24,7 +24,7 @@ jobs:
 
       # 3. Compilar y empaquetar el JAR (Saltando tests por ahora)
       - name: Build with Maven
-        run: mvn clean package -DskipTests
+        run: mvn clean package
 
       # 4. Desplegar el archivo JAR a Azure
       - name: Deploy to Azure Web App
